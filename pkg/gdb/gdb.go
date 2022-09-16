@@ -1,8 +1,9 @@
 package gdb
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
@@ -38,7 +39,7 @@ func (r *Repo) initDB(conn redis.Conn) {
 	r.graph = &g
 }
 
-func (r *Repo) AddCaller(userID string) error {
+func (r *Repo) addCaller(userID string) error {
 	newCaller := rg.Node{
 		Label: "Alerter",
 		Properties: map[string]any{
@@ -60,7 +61,17 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 	}
 
 	if alerterRes.Empty() {
-		return errors.New("alerter not found")
+		err = r.addCaller(alerterID)
+
+		if err != nil {
+			return errors.Wrap(err, "alerter could not be created")
+		}
+
+		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userIO = ` + alerterID + ` RETURN a.keys`)
+		if err != nil {
+			return errors.Wrap(err, "alerter could not be found even after creating?")
+		}
+
 	}
 
 	var keys map[string]bool
@@ -198,7 +209,6 @@ func (r *Repo) ServerListAllAlerters(guildID string) ([]string, error) {
 	}
 
 	return res, nil
-
 }
 
 func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error) {
