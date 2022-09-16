@@ -12,8 +12,6 @@ type medusa struct {
 	repo      *gdb.Repo
 	s         *discordgo.Session
 	alerterID string
-
-	keyStore sync.Map //map[[]string]
 }
 
 type medusaImpl interface {
@@ -29,7 +27,7 @@ var singleton *medusa
 
 func GetMedusa(session *discordgo.Session, r *gdb.Repo, alerterID string) *medusa {
 	once.Do(func() {
-		singleton = &medusa{s: session, repo: r, keyStore: sync.Map{}, alerterID: alerterID}
+		singleton = &medusa{s: session, repo: r, alerterID: alerterID}
 	})
 	return singleton
 }
