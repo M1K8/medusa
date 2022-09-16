@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/m1k8/medusa/vendor/github.com/google/uuid"
+	"github.com/google/uuid"
 	rg "github.com/redislabs/redisgraph-go"
 )
 
