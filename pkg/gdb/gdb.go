@@ -8,6 +8,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 	rg "github.com/redislabs/redisgraph-go"
+	"golang.org/x/exp/slices"
 )
 
 type Repo struct {
@@ -44,7 +45,7 @@ func (r *Repo) addCaller(userID string) error {
 		Label: "Alerter",
 		Properties: map[string]any{
 			"userID": userID,
-			"keys":   make(map[string]bool, 0),
+			"keys":   make([]string, 0),
 		},
 	}
 
@@ -74,7 +75,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 
 	}
 
-	var keys map[string]bool
+	var keys []string
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
@@ -83,15 +84,16 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 			return errors.New("keys not defined")
 		}
 
-		keys = keysAny.(map[string]bool)
-		break
-
+		keys = keysAny.([]string)
 	}
 
-	if _, ok := keys[key]; !ok {
-		return errors.New("invalid key")
+	slices.Sort(keys)
+	idx, found := slices.BinarySearch(keys, key)
+
+	if !found {
+		return errors.New("key not found")
 	} else {
-		delete(keys, key)
+		keys = slices.Delete(keys, idx, idx+1)
 	}
 
 	serverRes, _ := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` return s`)
