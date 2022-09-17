@@ -186,14 +186,35 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 			return "", errors.Wrap(err, "alerter could not be created")
 		}
 
-		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userIO = ` + alerterID + ` RETURN a.keys`)
+		_, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userIO = ` + alerterID + ` RETURN a.keys`)
 		if err != nil {
 			return "", errors.Wrap(err, "alerter could not be found even after creating?")
 		}
 	}
 
+	var keys []string
+
 	uid := uuid.NewString()
-	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userID = $alerterID SET a.keys +=  { $key }`, map[string]any{"alerterID": alerterID, "key": uid})
+
+	for alerterRes.Next() {
+		r := alerterRes.Record()
+		keysAny, ok := r.Get("keys")
+		if !ok {
+			return "", errors.New("keys not defined")
+		}
+
+		keys = keysAny.([]string)
+	}
+
+	keys = append(keys, uid)
+	slices.Sort(keys)
+
+	anyKeys := []any{}
+
+	for _, v := range keys {
+		anyKeys = append(anyKeys, v)
+	}
+	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userID = $alerterID SET a.keys = $keys `, map[string]any{"alerterID": alerterID, "keys": anyKeys})
 	if err != nil {
 		return "", err
 	}
