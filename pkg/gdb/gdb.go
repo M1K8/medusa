@@ -45,7 +45,7 @@ func (r *Repo) addCaller(userID string) error {
 		Label: "Alerter",
 		Properties: map[string]any{
 			"userID": userID,
-			"keys":   make([]string, 0),
+			"keys":   make([]any, 0),
 		},
 	}
 
@@ -96,6 +96,12 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		keys = slices.Delete(keys, idx, idx+1)
 	}
 
+	anyKeys := []any{}
+
+	for _, v := range keys {
+		anyKeys = append(anyKeys, v)
+	}
+
 	serverRes, _ := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` return s`)
 	if serverRes.Empty() {
 		// create server if it doesnt already exist
@@ -122,7 +128,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 	}
 
 	// update the alerters key by removing the one just used
-	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userIO = $alerterID SET a.keys = $keys`, map[string]any{"alerterID": alerterID, "keys": keys})
+	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userIO = $alerterID SET a.keys = $keys`, map[string]any{"alerterID": alerterID, "keys": anyKeys})
 	if err != nil {
 		return err
 	}
@@ -173,7 +179,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 		return "", err
 	}
 
-	if alerterRes.Empty() { ///TEMPOTARY
+	if alerterRes.Empty() { ///TEMPORARY
 		err = r.addCaller(alerterID)
 
 		if err != nil {
@@ -187,7 +193,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 	}
 
 	uid := uuid.NewString()
-	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userID = $alerterID SET a.keys +=  { $key : true }`, map[string]any{"alerterID": alerterID, "key": uid})
+	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userID = $alerterID SET a.keys +=  { $key }`, map[string]any{"alerterID": alerterID, "key": uid})
 	if err != nil {
 		return "", err
 	}
