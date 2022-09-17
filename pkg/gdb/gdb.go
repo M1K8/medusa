@@ -58,7 +58,7 @@ func (r *Repo) addCaller(userID string) error {
 
 func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) error {
 	log.Println(alerterID)
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a.keys`)
+	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
 
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 			return errors.Wrap(err, "alerter could not be created")
 		}
 
-		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a.keys`)
+		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
 		if err != nil {
 			return errors.Wrap(err, "alerter could not be found even after creating?")
 		}
@@ -105,7 +105,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		anyKeys = append(anyKeys, v)
 	}
 
-	serverRes, _ := r.graph.Query(`MERGE (s {guildID = ` + guildID + `}  ) RETURN s`)
+	serverRes, _ := r.graph.Query(`MERGE (s {guildID = '` + guildID + `'}  ) RETURN s`)
 	if serverRes.Empty() {
 		// create server if it doesnt already exist
 		newServer := rg.Node{
@@ -136,7 +136,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		return err
 	}
 
-	res, err := r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = ` + alerterID + ` AND  s.guildID = ` + guildID + ` CREATE (s)-[r:Subscribes]->(a) RETURN r`)
+	res, err := r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' CREATE (s)-[r:Subscribes]->(a) RETURN r`)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 }
 
 func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a`)
+	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a`)
 
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 	if alerterRes.Empty() {
 		return errors.New("alerter not found")
 	}
-	serverRes, err := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` RETURN s`)
+	serverRes, err := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = '` + guildID + `' RETURN s`)
 	if err != nil {
 		return errors.Wrap(err, "unable to get server")
 	}
@@ -164,12 +164,12 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 	}
 
 	// update the alerters key by removing the one just used
-	_, err = r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` SET s.channelIDs += { ` + alerterID + ` : NULL} RETURN s`)
+	_, err = r.graph.Query(`MATCH (s:Server) WHERE s.guildID = '` + guildID + `' SET s.channelIDs += { '` + alerterID + `' : NULL} RETURN s`)
 	if err != nil {
 		return err
 	}
 
-	res, err := r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = ` + alerterID + ` AND  s.guildID = ` + guildID + ` DELETE (s)-[r:Subscribes]->(a) RETURN r`)
+	res, err := r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' DELETE (s)-[r:Subscribes]->(a) RETURN r`)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 }
 
 func (r *Repo) Generate(alerterID string) (string, error) {
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a.keys`)
+	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
 
 	if err != nil {
 		return "", err
@@ -192,7 +192,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 			return "", errors.Wrap(err, "alerter could not be created")
 		}
 
-		_, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a.keys`)
+		_, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
 		if err != nil {
 			return "", errors.Wrap(err, "alerter could not be found even after creating?")
 		}
@@ -256,7 +256,7 @@ func (r *Repo) ServerListAllAlerters(guildID string) ([]string, error) {
 }
 
 func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error) {
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = ` + alerterID + ` RETURN a`)
+	alerterRes, err := r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a`)
 
 	if err != nil {
 		return nil, err
@@ -266,7 +266,7 @@ func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error
 		return nil, errors.New("alerter not found")
 	}
 
-	serverRes, err := r.graph.Query(`MATCH (a:Alerter)-[]-(s:Server) WHERE a.userID = ` + alerterID + ` RETURN s`)
+	serverRes, err := r.graph.Query(`MATCH (a:Alerter)-[]-(s:Server) WHERE a.userID = '` + alerterID + `' RETURN s`)
 	if err != nil {
 		return nil, err
 	}
