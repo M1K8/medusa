@@ -1,6 +1,7 @@
 package gdb
 
 import (
+	"log"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -41,6 +42,7 @@ func (r *Repo) initDB(conn redis.Conn) {
 }
 
 func (r *Repo) addCaller(userID string) error {
+	log.Println("Creating alerter...")
 	newCaller := rg.Node{
 		Label: "Alerter",
 		Properties: map[string]any{
@@ -102,7 +104,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		anyKeys = append(anyKeys, v)
 	}
 
-	serverRes, _ := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` return s`)
+	serverRes, _ := r.graph.Query(`MERGE (s {guildID = ` + guildID + `}  ) RETURN s`)
 	if serverRes.Empty() {
 		// create server if it doesnt already exist
 		newServer := rg.Node{
@@ -153,6 +155,9 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 		return errors.New("alerter not found")
 	}
 	serverRes, err := r.graph.Query(`MATCH (s:Server) WHERE s.guildID = ` + guildID + ` RETURN s`)
+	if err != nil {
+		return errors.Wrap(err, "unable to get server")
+	}
 	if serverRes.Empty() {
 		return errors.New("server not found")
 	}
