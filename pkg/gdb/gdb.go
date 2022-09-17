@@ -82,11 +82,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
-		keysAny, ok := r.Get("keys")
-		if !ok {
-			return errors.New("keys not defined")
-		}
-
+		keysAny := r.GetByIndex(0)
 		keys = keysAny.([]string)
 	}
 
@@ -204,10 +200,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
-		keysAny, ok := r.Get("keys")
-		if !ok {
-			return "", errors.New("keys not defined")
-		}
+		keysAny := r.GetByIndex(0)
 
 		keys = keysAny.([]string)
 	}
