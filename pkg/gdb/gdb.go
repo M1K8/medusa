@@ -78,26 +78,31 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 
 	}
 
-	var keys []string
+	var keysAnySlice []any
+	keysStrs := make([]string, 0)
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
 		keysAny := r.GetByIndex(0)
-		keys = keysAny.([]string)
+		keysAnySlice, _ = keysAny.([]any)
 	}
 
-	slices.Sort(keys)
-	idx, found := slices.BinarySearch(keys, key)
+	for _, v := range keysAnySlice {
+		keysStrs = append(keysStrs, v.(string))
+	}
+
+	slices.Sort(keysStrs)
+	idx, found := slices.BinarySearch(keysStrs, key)
 
 	if !found {
 		return errors.New("key not found")
 	} else {
-		keys = slices.Delete(keys, idx, idx+1)
+		keysStrs = slices.Delete(keysStrs, idx, idx+1)
 	}
 
 	anyKeys := []any{}
 
-	for _, v := range keys {
+	for _, v := range keysStrs {
 		anyKeys = append(anyKeys, v)
 	}
 
@@ -197,16 +202,20 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 	var keys []string
 
 	uid := uuid.NewString()
+	var keysAnySlice []any
+	keysStrs := make([]string, 0)
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
 		keysAny := r.GetByIndex(0)
-
-		keys = keysAny.([]string)
+		keysAnySlice, _ = keysAny.([]any)
 	}
 
-	keys = append(keys, uid)
-	slices.Sort(keys)
+	for _, v := range keysAnySlice {
+		keysStrs = append(keysStrs, v.(string))
+	}
+
+	slices.Sort(keysStrs)
 
 	anyKeys := []any{}
 
