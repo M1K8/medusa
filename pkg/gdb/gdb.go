@@ -171,8 +171,17 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 		return "", err
 	}
 
-	if alerterRes.Empty() {
-		return "", errors.New("alerter not found")
+	if alerterRes.Empty() { ///TEMPOTARY
+		err = r.addCaller(alerterID)
+
+		if err != nil {
+			return "", errors.Wrap(err, "alerter could not be created")
+		}
+
+		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userIO = ` + alerterID + ` RETURN a.keys`)
+		if err != nil {
+			return "", errors.Wrap(err, "alerter could not be found even after creating?")
+		}
 	}
 
 	uid := uuid.NewString()

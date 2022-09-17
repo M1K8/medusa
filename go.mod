@@ -1,6 +1,6 @@
 module github.com/m1k8/medusa
 
-go 1.18
+go 1.19
 
 require (
 	github.com/bwmarrin/discordgo v0.25.0
