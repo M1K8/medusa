@@ -199,8 +199,6 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 		}
 	}
 
-	var keys []string
-
 	uid := uuid.NewString()
 	var keysAnySlice []any
 	keysStrs := []string{uid}
@@ -219,7 +217,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 
 	anyKeys := []any{}
 
-	for _, v := range keys {
+	for _, v := range keysStrs {
 		anyKeys = append(anyKeys, v)
 	}
 	_, err = r.graph.ParameterizedQuery(`MATCH (a:Alerter) WHERE a.userID = $alerterID SET a.keys = $keys `, map[string]any{"alerterID": alerterID, "keys": anyKeys})
