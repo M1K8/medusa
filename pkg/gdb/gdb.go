@@ -37,7 +37,7 @@ func GetRepo() *Repo {
 
 func (r *Repo) initDB(conn redis.Conn) {
 	g := rg.GraphNew("servers", conn)
-	g.Delete()
+	//g.Delete()
 	r.graph = &g
 }
 
@@ -106,7 +106,10 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		anyKeys = append(anyKeys, v)
 	}
 
-	serverRes, _ := r.graph.Query(`MERGE (s {guildID = '` + guildID + `'}  ) RETURN s`)
+	serverRes, err := r.graph.Query(`MERGE (s {guildID: '` + guildID + `'}  ) RETURN s`)
+	if err != nil {
+		log.Println(err)
+	}
 	if serverRes.Empty() {
 		// create server if it doesnt already exist
 		newServer := rg.Node{
