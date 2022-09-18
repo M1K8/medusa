@@ -193,7 +193,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 			return "", errors.Wrap(err, "alerter could not be created")
 		}
 
-		_, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
+		alerterRes, err = r.graph.Query(`MATCH (a:Alerter) WHERE a.userID = '` + alerterID + `' RETURN a.keys`)
 		if err != nil {
 			return "", errors.Wrap(err, "alerter could not be found even after creating?")
 		}
