@@ -203,7 +203,7 @@ func (r *Repo) Generate(alerterID string) (string, error) {
 
 	uid := uuid.NewString()
 	var keysAnySlice []any
-	keysStrs := make([]string, 0)
+	keysStrs := []string{uid}
 
 	for alerterRes.Next() {
 		r := alerterRes.Record()
