@@ -129,7 +129,7 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 		}
 	} else {
 
-		var channelsAnyMap map[string]any
+		channelsAnyMap := make(map[string]any)
 
 		for alerterRes.Next() {
 			r := alerterRes.Record()
