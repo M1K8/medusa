@@ -1,6 +1,7 @@
 package gdb
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -127,8 +128,21 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 			return err
 		}
 	} else {
+
+		var channelsAnyMap map[string]any
+
+		for alerterRes.Next() {
+			r := alerterRes.Record()
+			channelssAny := r.GetByIndex(0)
+			channelsAnyMap, _ = channelssAny.(map[string]any)
+		}
+
+		channelsAnyMap[guildID] = channelID
+
+		mapStr := mapToString(channelsAnyMap)
+
 		// update the channel map
-		_, err := r.graph.ParameterizedQuery(`MATCH (s:Server) WHERE s.guildID = $guildID SET s.channelIds +=  { $alerterID : $channelID }`, map[string]any{"guildID": guildID, "alerterID": alerterID, "channelID": channelID})
+		_, err := r.graph.ParameterizedQuery(`MATCH (s:Server) WHERE s.guildID = $guildID SET s.channelIds =  $map`, map[string]any{"guildID": guildID, "map": mapStr})
 		if err != nil {
 			return err
 		}
@@ -163,12 +177,25 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get server")
 	}
+
 	if serverRes.Empty() {
 		return errors.New("server not found")
 	}
 
+	var channelsAnyMap map[string]any
+
+	for serverRes.Next() {
+		r := alerterRes.Record()
+		channelssAny := r.GetByIndex(0)
+		channelsAnyMap, _ = channelssAny.(map[string]any)
+	}
+
+	delete(channelsAnyMap, guildID)
+
+	mapStr := mapToString(channelsAnyMap)
+
 	// update the alerters key by removing the one just used
-	_, err = r.graph.Query(`MATCH (s:Server) WHERE s.guildID = '` + guildID + `' SET s.channelIDs += { '` + alerterID + `' : NULL} RETURN s`)
+	_, err = r.graph.Query(`MATCH (s:Server) WHERE s.guildID = '` + guildID + `' SET s.channelIDs =` + mapStr + ` RETURN s`)
 	if err != nil {
 		return err
 	}
@@ -286,5 +313,19 @@ func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error
 	}
 
 	return res, nil
+}
 
+func mapToString(m map[string]any) string {
+	res := "{ "
+
+	for k, v := range m {
+		str := `%v : '%v'`
+		res += fmt.Sprintf(str, k, v)
+
+	}
+
+	res = res[:len(res)-1]
+	res += " }"
+
+	return res
 }
