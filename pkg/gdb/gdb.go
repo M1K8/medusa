@@ -44,16 +44,10 @@ func (r *Repo) initDB(conn redis.Conn) {
 
 func (r *Repo) addCaller(userID string) error {
 	log.Println("Creating alerter...")
-	newCaller := rg.Node{
-		Label: "Alerter",
-		Properties: map[string]any{
-			"userID": userID,
-			"keys":   make([]any, 0),
-		},
-	}
 
-	r.graph.AddNode(&newCaller)
-	_, err := r.graph.Commit()
+	// create server if it doesnt already exist
+	str := `CREATE (a:Alerter {userID: '%v', keys: %v}) `
+	_, err := r.graph.Query(fmt.Sprintf(str, userID, rg.ToString(make([]any, 0))))
 	return err
 }
 
@@ -84,16 +78,8 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 	}
 	if serverRes.Empty() {
 		// create server if it doesnt already exist
-		newServer := rg.Node{
-			Label: "Server",
-			Properties: map[string]any{
-				"guildID": guildID,
-			},
-		}
-
-		r.graph.AddNode(&newServer)
-
-		_, err := r.graph.Commit()
+		str := `CREATE (s:Server {guildID: '%v'}) `
+		_, err := r.graph.Query(fmt.Sprintf(str, guildID))
 		if err != nil {
 			return errors.Wrap(err, "unable to create Server")
 		}
@@ -149,22 +135,17 @@ func (r *Repo) ServerSubToAlerter(alerterID, guildID, channelID, key string) err
 
 // When unsub, Alerter.userID -[r]- Server.GuildID; delete r; &&& Alerter.userID -[r]- Channel.GuildID; delete r
 func (r *Repo) createAlerterChannel(alerterID, channelID, guildID string) error {
-	newServer := rg.Node{
-		Label: "AlerterChannel",
-		Properties: map[string]any{
-			"guildID":   guildID,
-			"channelID": channelID,
-		},
+
+	str := `CREATE (ch:AlerterChannel {guildID: '%v', channelID:'%v'}) `
+	_, err := r.graph.Query(fmt.Sprintf(str, guildID, channelID))
+	if err != nil {
+		return errors.Wrap(err, "unable to create AlerterChannel relationship - are alerter and guild defined?")
 	}
-
-	r.graph.AddNode(&newServer)
-
-	_, err := r.graph.Commit()
 	if err != nil {
 		return errors.Wrap(err, "unable to create AlerterChannel")
 	}
 
-	str := `MATCH (ch:AlerterChannel), (a:Alerter) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' CREATE (a)-[r:AlertsOn]->(ch) RETURN r, a, ch`
+	str = `MATCH (ch:AlerterChannel), (a:Alerter) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' CREATE (a)-[r:AlertsOn]->(ch) RETURN r, a, ch`
 	_, err = r.graph.Query(str)
 	if err != nil {
 		return errors.Wrap(err, "unable to create AlerterChannel relationship - are alerter and guild defined?")
