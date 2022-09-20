@@ -164,7 +164,7 @@ func (r *Repo) createAlerterChannel(alerterID, channelID, guildID string) error 
 		return errors.Wrap(err, "unable to create AlerterChannel")
 	}
 
-	str := `MATCH (ch:AlerterChannel), (a:Alerter) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' CREATE (a)-[r:AlertsOn]-(ch) RETURN r, a, ch`
+	str := `MATCH (ch:AlerterChannel), (a:Alerter) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' CREATE (a)-[r:AlertsOn]->(ch) RETURN r, a, ch`
 	_, err = r.graph.Query(str)
 	if err != nil {
 		return errors.Wrap(err, "unable to create AlerterChannel relationship - are alerter and guild defined?")
@@ -173,9 +173,9 @@ func (r *Repo) createAlerterChannel(alerterID, channelID, guildID string) error 
 	return nil
 }
 
-func (r *Repo) removeAlerterChannel(alerterID, channelID, guildID string) error {
+func (r *Repo) removeAlerterChannel(alerterID, guildID string) error {
 
-	str := `MATCH (a:Alerter)-[r:AlertsOn]-(ch:AlerterChannel) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' AND ch.channelID = '` + channelID + `' DELETE r RETURN  a, ch`
+	str := `MATCH (a:Alerter)-[r:AlertsOn]-(ch:AlerterChannel) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' DELETE r RETURN  a, ch`
 	res, err := r.graph.Query(str)
 	if err != nil {
 		return errors.Wrap(err, "unable to remove AlerterChannel relationship - are alerter and guild defined?")
@@ -184,18 +184,12 @@ func (r *Repo) removeAlerterChannel(alerterID, channelID, guildID string) error 
 		return errors.New("nothing created when trying to subscribe! Are you sure the alerter and server exist?")
 	}
 
-	str = `MATCH (ch:AlerterChannel)-[]-(x) WHERE ch.guildID = '` + guildID + `' AND ch.channelID = '` + channelID + `' RETURN x`
-	res, err = r.graph.Query(str)
+	str = `MATCH (x)
+	WHERE NOT (x)-[]-()
+	DELETE collect(x)`
+	_, err = r.graph.Query(str)
 	if err != nil {
-		return errors.Wrap(err, "unable to get potentially detached AlerterChannel")
-	}
-
-	if res.Empty() {
-		str = `MATCH (ch:AlerterChannel) WHERE ch.guildID = '` + guildID + `' AND ch.channelID = '` + channelID + `' DELETE ch`
-		_, err = r.graph.Query(str)
-		if err != nil {
-			return errors.Wrap(err, "unable to delete detached AlerterChannel")
-		}
+		return errors.Wrap(err, "unable to get prune nodes with 0 relations")
 	}
 
 	return nil
@@ -220,31 +214,12 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 		return errors.New("server not found")
 	}
 
-	var channelsAnyMap map[string]any
-
-	for serverRes.Next() {
-		r := alerterRes.Record()
-		channelssAny := r.GetByIndex(1)
-		channelsAnyMap, _ = channelssAny.(map[string]any)
-	}
-
-	delete(channelsAnyMap, guildID)
-
-	mapStr := mapToString(channelsAnyMap)
-
-	// update the alerters key by removing the one just used
-	_, err = r.graph.Query(`MATCH (s:Server) WHERE s.guildID = '` + guildID + `' SET s.channelIDs =` + mapStr + ` RETURN s`)
+	_, err = r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' DELETE (s)-[r:Subscribes]->(a) RETURN r`)
 	if err != nil {
 		return err
 	}
 
-	res, err := r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' DELETE (s)-[r:Subscribes]->(a) RETURN r`)
-	if err != nil {
-		return err
-	}
-
-	res.PrettyPrint()
-	return nil
+	return r.removeAlerterChannel(alerterID, guildID)
 }
 
 func (r *Repo) Generate(alerterID string) (string, error) {
