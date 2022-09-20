@@ -290,7 +290,7 @@ func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error
 		return nil, errors.New("alerter not found")
 	}
 
-	serverRes, err := r.graph.Query(`MATCH (c:AlerterChannel)-[]-(a:Alerter)-[]-(s:Server) WHERE a.userID = '` + alerterID + `' RETURN c.channelID`)
+	serverRes, err := r.graph.Query(`MATCH (c:AlerterChannel)-[]-(a:Alerter)-[]-(s:Server) WHERE a.userID = '` + alerterID + `' RETURN c`)
 	if err != nil {
 		return nil, err
 	}
@@ -300,31 +300,11 @@ func (r *Repo) AlerterListAllServers(alerterID string) (map[string]string, error
 	for serverRes.Next() {
 		rec := serverRes.Record()
 
-		guildID := rec.GetByIndex(0)
-		channelIDs := rec.GetByIndex(1)
+		nodeAny := rec.GetByIndex(0)
 
-		res[guildID.(string)] = channelIDs.(string)
+		node := nodeAny.(*rg.Node)
+
+		res[node.Properties["guildID"].(string)] = node.Properties["channelID"].(string)
 	}
-
 	return res, nil
-}
-
-func mapToString(m map[string]any) string {
-	res := "{ "
-	ctr := 0
-
-	for k, v := range m {
-		ctr++
-		str := `'%v' : '%v' `
-		res += fmt.Sprintf(str, k, v)
-
-		if ctr < len(m)-1 {
-			res += ", "
-		}
-	}
-
-	res = res[:len(res)-1]
-	res += " }"
-
-	return res
 }
