@@ -165,9 +165,7 @@ func (r *Repo) removeAlerterChannel(alerterID, guildID string) error {
 		return errors.New("nothing created when trying to subscribe! Are you sure the alerter and server exist?")
 	}
 
-	str = `MATCH (x)
-	WHERE NOT (x)-[]-()
-	DELETE collect(x)`
+	str = `MATCH (x) WHERE NOT (x)-[]-() DELETE x`
 	_, err = r.graph.Query(str)
 	if err != nil {
 		return errors.Wrap(err, "unable to get prune nodes with 0 relations")
