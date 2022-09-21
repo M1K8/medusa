@@ -195,7 +195,7 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID string) error {
 		return errors.New("server not found")
 	}
 
-	_, err = r.graph.Query(`MATCH (a:Alerter), (s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' DELETE (s)-[r:Subscribes]->(a) RETURN r`)
+	_, err = r.graph.Query(`MATCH (a:Alerter)-[r:Subscribes]->(s:Server) WHERE a.userID = '` + alerterID + `' AND  s.guildID = '` + guildID + `' DELETE (r)`)
 	if err != nil {
 		return err
 	}
