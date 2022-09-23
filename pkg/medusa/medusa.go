@@ -35,20 +35,20 @@ func GetMedusa(session *discordgo.Session, r *gdb.Repo, alerterID string) *medus
 func (t *medusa) Send(msg string, editMessage func(string, string) string) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allSrvrs, err := t.repo.AlerterListAllServers(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range allSrvrs {
-		srvrMsg := msg
+	for k, v := range allChnnls {
+		chnnlMsg := msg
 		if editMessage != nil {
-			srvrMsg = editMessage(k, msg)
-			if srvrMsg == "" {
+			chnnlMsg = editMessage(k, msg)
+			if chnnlMsg == "" {
 				continue
 			}
 		}
-		ref, err := t.s.ChannelMessageSend(v, srvrMsg)
+		ref, err := t.s.ChannelMessageSend(v, chnnlMsg)
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v + " - " + err.Error())
@@ -66,22 +66,22 @@ func (t *medusa) Send(msg string, editMessage func(string, string) string) (map[
 func (t *medusa) SendEmbeds(embeds []*discordgo.MessageEmbed, editMessage func(string, []*discordgo.MessageEmbed) []*discordgo.MessageEmbed) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allSrvrs, err := t.repo.AlerterListAllServers(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range allSrvrs {
+	for k, v := range allChnnls {
 
-		srvrEmbeds := embeds
+		chnnlEmbeds := embeds
 		if editMessage != nil {
-			srvrEmbeds = editMessage(k, embeds)
-			if srvrEmbeds == nil || len(srvrEmbeds) == 0 {
+			chnnlEmbeds = editMessage(k, embeds)
+			if len(chnnlEmbeds) == 0 {
 				continue
 			}
 		}
 
-		ref, err := t.s.ChannelMessageSendEmbeds(v, srvrEmbeds)
+		ref, err := t.s.ChannelMessageSendEmbeds(v, chnnlEmbeds)
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v + " - " + err.Error())
@@ -99,20 +99,20 @@ func (t *medusa) SendEmbeds(embeds []*discordgo.MessageEmbed, editMessage func(s
 func (t *medusa) SendComplex(msg *discordgo.MessageSend, editMessage func(string, *discordgo.MessageSend) *discordgo.MessageSend) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allSrvrs, err := t.repo.AlerterListAllServers(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range allSrvrs {
-		srvrMsg := msg
+	for k, v := range allChnnls {
+		chnnlMsg := msg
 		if editMessage != nil {
-			srvrMsg = editMessage(k, msg)
-			if srvrMsg == nil {
+			chnnlMsg = editMessage(k, msg)
+			if chnnlMsg == nil {
 				continue
 			}
 		}
-		ref, err := t.s.ChannelMessageSendComplex(v, srvrMsg)
+		ref, err := t.s.ChannelMessageSendComplex(v, chnnlMsg)
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v + " - " + err.Error())
