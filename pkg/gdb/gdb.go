@@ -72,9 +72,9 @@ func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, key string) er
 
 	}
 
-	channelRes, err := r.graph.Query(`MATCH (c:AlerterChannel {guildID: '%v', channelID: '%v' })`)
+	channelRes, err := r.graph.Query(`MATCH (c:AlerterChannel {guildID: '%v', channelID: '%v' }) RETURN (c)`)
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
 	if channelRes.Empty() {
 		// create channel if it doesnt already exist
@@ -131,47 +131,6 @@ func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, key string) er
 	}
 
 	return nil //r.createAlerterChannel(alerterID, channelID, guildID)
-}
-
-// When unsub, Alerter.userID -[r]- Server.GuildID; delete r; &&& Alerter.userID -[r]- Channel.GuildID; delete r
-func (r *Repo) createAlerterChannel(alerterID, channelID, guildID string) error {
-
-	str := `CREATE (ch:AlerterChannel {guildID: '%v', channelID:'%v'}) `
-	_, err := r.graph.Query(fmt.Sprintf(str, guildID, channelID))
-	if err != nil {
-		return errors.Wrap(err, "unable to create AlerterChannel relationship - are alerter and guild defined?")
-	}
-	if err != nil {
-		return errors.Wrap(err, "unable to create AlerterChannel")
-	}
-
-	str = `MATCH (ch:AlerterChannel), (a:Alerter) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' CREATE (a)-[r:AlertsOn]->(ch) RETURN r, a, ch`
-	_, err = r.graph.Query(str)
-	if err != nil {
-		return errors.Wrap(err, "unable to create AlerterChannel relationship - are alerter and guild defined?")
-	}
-
-	return nil
-}
-
-func (r *Repo) removeAlerterChannel(alerterID, guildID string) error {
-
-	str := `MATCH (a:Alerter)-[r:AlertsOn]-(ch:AlerterChannel) WHERE a.userID = '` + alerterID + `' AND  ch.guildID = '` + guildID + `' DELETE r RETURN  a, ch`
-	res, err := r.graph.Query(str)
-	if err != nil {
-		return errors.Wrap(err, "unable to remove AlerterChannel relationship - are alerter and guild defined?")
-	}
-	if res.Empty() {
-		return errors.New("nothing created when trying to subscribe! Are you sure the alerter and server exist?")
-	}
-
-	str = `MATCH (x) WHERE NOT (x)-[]-() DELETE x`
-	_, err = r.graph.Query(str)
-	if err != nil {
-		return errors.Wrap(err, "unable to get prune nodes with 0 relations")
-	}
-
-	return nil
 }
 
 func (r *Repo) ServerUnsubToAlerter(alerterID, guildID, channelID string) error {
