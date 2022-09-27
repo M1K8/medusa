@@ -9,15 +9,14 @@ import (
 )
 
 type medusa struct {
-	repo      *gdb.Repo
-	s         *discordgo.Session
-	alerterID string
+	repo *gdb.Repo
+	s    *discordgo.Session
 }
 
 type medusaImpl interface {
-	Send(msg string, editMessage func(string, string) string) (map[string]*discordgo.MessageReference, error)
-	SendEmbeds(embeds []*discordgo.MessageEmbed, editMessage func(string, []*discordgo.MessageEmbed) []*discordgo.MessageEmbed) (map[string]*discordgo.MessageReference, error)
-	SendComplex(msg *discordgo.MessageSend, editMessage func(string, *discordgo.MessageSend) *discordgo.MessageSend) (map[string]*discordgo.MessageReference, error)
+	Send(msg, alerterID string, editMessage func(string, string) string) (map[string]*discordgo.MessageReference, error)
+	SendEmbeds(alerterID string, embeds []*discordgo.MessageEmbed, editMessage func(string, []*discordgo.MessageEmbed) []*discordgo.MessageEmbed) (map[string]*discordgo.MessageReference, error)
+	SendComplex(alerterID string, msg *discordgo.MessageSend, editMessage func(string, *discordgo.MessageSend) *discordgo.MessageSend) (map[string]*discordgo.MessageReference, error)
 }
 
 var _ medusaImpl = &medusa{}
@@ -25,17 +24,17 @@ var _ medusaImpl = &medusa{}
 var once sync.Once = sync.Once{}
 var singleton *medusa
 
-func GetMedusa(session *discordgo.Session, r *gdb.Repo, alerterID string) *medusa {
+func GetMedusa(session *discordgo.Session, r *gdb.Repo) *medusa {
 	once.Do(func() {
-		singleton = &medusa{s: session, repo: r, alerterID: alerterID}
+		singleton = &medusa{s: session, repo: r}
 	})
 	return singleton
 }
 
-func (t *medusa) Send(msg string, editMessage func(string, string) string) (map[string]*discordgo.MessageReference, error) {
+func (t *medusa) Send(msg, alerterID string, editMessage func(string, string) string) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(alerterID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +62,10 @@ func (t *medusa) Send(msg string, editMessage func(string, string) string) (map[
 	return msgRefs, nil
 }
 
-func (t *medusa) SendEmbeds(embeds []*discordgo.MessageEmbed, editMessage func(string, []*discordgo.MessageEmbed) []*discordgo.MessageEmbed) (map[string]*discordgo.MessageReference, error) {
+func (t *medusa) SendEmbeds(alerterID string, embeds []*discordgo.MessageEmbed, editMessage func(string, []*discordgo.MessageEmbed) []*discordgo.MessageEmbed) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(alerterID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +95,10 @@ func (t *medusa) SendEmbeds(embeds []*discordgo.MessageEmbed, editMessage func(s
 	return msgRefs, nil
 }
 
-func (t *medusa) SendComplex(msg *discordgo.MessageSend, editMessage func(string, *discordgo.MessageSend) *discordgo.MessageSend) (map[string]*discordgo.MessageReference, error) {
+func (t *medusa) SendComplex(alerterID string, msg *discordgo.MessageSend, editMessage func(string, *discordgo.MessageSend) *discordgo.MessageSend) (map[string]*discordgo.MessageReference, error) {
 	msgRefs := make(map[string]*discordgo.MessageReference, 0)
 
-	allChnnls, err := t.repo.AlerterListAllChannels(t.alerterID)
+	allChnnls, err := t.repo.AlerterListAllChannels(alerterID)
 	if err != nil {
 		return nil, err
 	}
