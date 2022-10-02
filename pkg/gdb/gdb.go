@@ -134,7 +134,7 @@ func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, key string) er
 }
 
 func (r *Repo) ServerUnsubToAlerter(alerterID, guildID, channelID string) error {
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter {userID: '` + alerterID + `'}) RETURN a.keys`)
+	alerterRes, err := r.graph.Query(`MATCH (a:Alerter {userID: '` + alerterID + `'}) RETURN a`)
 
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID, channelID string) error 
 		return errors.New("channel not found")
 	}
 
-	_, err = r.graph.Query(`MATCH (ch:ChannelAlerter {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]->(a:Alerter {userID: '` + alerterID + `'  })  DELETE (r)`)
+	_, err = r.graph.Query(`MATCH (ch:ChannelAlerter {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]->(a:Alerter {userID: '` + alerterID + `'  })  DELETE r`)
 	if err != nil {
 		return err
 	}
