@@ -243,11 +243,15 @@ func (r *Repo) ChannelListAllAlerters(channelID string) ([]string, error) {
 }
 
 func (r *Repo) AlerterListAllChannels(alerterID string) (map[string]string, error) {
-	alerterRes, err := r.graph.Query(`MATCH (a:Alerter {userID: '` + alerterID + `'  }) RETURN a`)
+	str := `MATCH (a:Alerter {userID: '` + alerterID + `'  }) RETURN a`
+	log.Println(str)
+	alerterRes, err := r.graph.Query(str)
 
 	if err != nil {
 		return nil, err
 	}
+
+	alerterRes.PrettyPrint()
 
 	if alerterRes.Empty() {
 		return nil, errors.New("alerter not found")
