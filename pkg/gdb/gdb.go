@@ -152,9 +152,13 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID, channelID string) error 
 		return errors.New("channel not found")
 	}
 
-	_, err = r.graph.Query(`MATCH (ch:ChannelAlerter {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]->(a:Alerter {userID: '` + alerterID + `'  })  DELETE r`)
+	delRes, err := r.graph.Query(`MATCH (ch:ChannelAlerter {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]-(a:Alerter {userID: '` + alerterID + `'  })  DELETE r`)
 	if err != nil {
 		return err
+	}
+
+	if delRes.Empty() {
+		log.Println("No Relationship deleted for " + channelID + " " + alerterID)
 	}
 
 	str := `MATCH (x) WHERE NOT (x)-[]-() DELETE x`
@@ -244,14 +248,11 @@ func (r *Repo) ChannelListAllAlerters(channelID string) ([]string, error) {
 
 func (r *Repo) AlerterListAllChannels(alerterID string) (map[string]string, error) {
 	str := `MATCH (a:Alerter {userID: '` + alerterID + `'  }) RETURN a`
-	log.Println(str)
 	alerterRes, err := r.graph.Query(str)
 
 	if err != nil {
 		return nil, err
 	}
-
-	alerterRes.PrettyPrint()
 
 	if alerterRes.Empty() {
 		return nil, errors.New("alerter not found")
