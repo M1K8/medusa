@@ -152,7 +152,7 @@ func (r *Repo) ServerUnsubToAlerter(alerterID, guildID, channelID string) error 
 		return errors.New("channel not found")
 	}
 
-	delRes, err := r.graph.Query(`MATCH (ch:ChannelAlerter {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]-(a:Alerter {userID: '` + alerterID + `'  })  DELETE r`)
+	delRes, err := r.graph.Query(`MATCH (ch:AlerterChannel {guildID: '` + guildID + `', channelID: '` + channelID + `' })-[r:Subscribes]-(a:Alerter {userID: '` + alerterID + `'  })  DELETE r`)
 	if err != nil {
 		return err
 	}
