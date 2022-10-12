@@ -51,7 +51,7 @@ func (r *Repo) addCaller(userID string) error {
 	return err
 }
 
-func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, key string) error {
+func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, roleID, key string) error {
 	alerterRes, err := r.graph.Query(`MATCH (a:Alerter {userID: '` + alerterID + `'  }) RETURN a.keys`)
 
 	if err != nil {
@@ -78,8 +78,8 @@ func (r *Repo) ChannelSubToAlerter(alerterID, guildID, channelID, key string) er
 	}
 	if channelRes.Empty() {
 		// create channel if it doesnt already exist
-		str := `CREATE (c:AlerterChannel {guildID: '%v', channelID: '%v' })`
-		_, err := r.graph.Query(fmt.Sprintf(str, guildID, channelID))
+		str := `CREATE (c:AlerterChannel {guildID: '%v', channelID: '%v', roleID: '%v' })`
+		_, err := r.graph.Query(fmt.Sprintf(str, guildID, channelID, roleID))
 		if err != nil {
 			return errors.Wrap(err, "unable to create AlerterChannel")
 		}
@@ -246,7 +246,7 @@ func (r *Repo) ChannelListAllAlerters(channelID string) ([]string, error) {
 	return res, nil
 }
 
-func (r *Repo) AlerterListAllChannels(alerterID string) (map[string]string, error) {
+func (r *Repo) AlerterListAllChannels(alerterID string) (map[string][]string, error) {
 	str := `MATCH (a:Alerter {userID: '` + alerterID + `'  }) RETURN a`
 	alerterRes, err := r.graph.Query(str)
 
@@ -263,7 +263,7 @@ func (r *Repo) AlerterListAllChannels(alerterID string) (map[string]string, erro
 		return nil, err
 	}
 
-	res := make(map[string]string, 0)
+	res := make(map[string][]string, 0)
 
 	for channelRes.Next() {
 		rec := channelRes.Record()
@@ -272,7 +272,7 @@ func (r *Repo) AlerterListAllChannels(alerterID string) (map[string]string, erro
 
 		node := nodeAny.(*rg.Node)
 
-		res[node.Properties["guildID"].(string)] = node.Properties["channelID"].(string)
+		res[node.Properties["guildID"].(string)] = []string{node.Properties["channelID"].(string), node.Properties["roleID"].(string)}
 	}
 	return res, nil
 }
