@@ -49,7 +49,7 @@ func (t *medusa) Send(msg, alerterID string, editMessage func(string, string) st
 		}
 		ref, err := t.s.ChannelMessageSend(v[0], chnnlMsg)
 
-		t.s.ChannelMessageSend(v[0], "<@"+v[1]+">")
+		t.s.ChannelMessageSend(v[0], "<@&"+v[1]+">")
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v[0] + " - " + err.Error())
@@ -83,7 +83,7 @@ func (t *medusa) SendEmbeds(alerterID string, embeds []*discordgo.MessageEmbed, 
 		}
 
 		ref, err := t.s.ChannelMessageSendEmbeds(v[0], chnnlEmbeds)
-		t.s.ChannelMessageSend(v[0], "<@"+v[1]+">")
+		t.s.ChannelMessageSend(v[0], "<@&"+v[1]+">")
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v[0] + " - " + err.Error())
@@ -115,7 +115,7 @@ func (t *medusa) SendComplex(alerterID string, msg *discordgo.MessageSend, editM
 			}
 		}
 		ref, err := t.s.ChannelMessageSendComplex(v[0], chnnlMsg)
-		t.s.ChannelMessageSend(v[0], "<@"+v[1]+">")
+		t.s.ChannelMessageSend(v[0], "<@&"+v[1]+">")
 
 		if err != nil {
 			log.Println("Failed to send message to " + k + ":" + v[0] + " - " + err.Error())
